@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The 背理法探偵</title>
+  <style>
+    :root {
+      --bg:     #0f172a;
+      --card:   #1e293b;
+      --border: #334155;
+      --text:   #e2e8f0;
+      --muted:  #94a3b8;
+      --accent: #6366f1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; min-height: 100vh; padding: 24px 20px; max-width: 620px; margin: 0 auto; }
+    .screen.active { display: flex; flex-direction: column; }
+
+    /* ── TITLE ── */
+    #s-title { justify-content: center; align-items: center; text-align: center; gap: 24px; }
+    .title-logo  { font-size: 72px; line-height: 1; }
+    .title-main  { font-size: 2rem; font-weight: 900;
+                   background: linear-gradient(135deg,#6366f1,#a855f7,#ec4899);
+                   -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .title-sub   { color: var(--muted); font-size: 1rem; }
+
+    /* ── BUTTONS ── */
+    .btn { padding:13px 28px; border:none; border-radius:12px; font-size:1rem;
+           font-weight:700; cursor:pointer; transition:all .2s; }
+    .btn-primary { background:linear-gradient(135deg,#6366f1,#a855f7); color:#fff; }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(99,102,241,.4); }
+    .btn-secondary { background:var(--card); color:var(--text); border:1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    /* ── STAGE SELECT ── */
+    #s-stages h2 { font-size:1.3rem; }
+    .stage-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+    .stage-card {
+      background:var(--card); border:1px solid var(--border); border-radius:16px;
+      padding:20px 14px; cursor:pointer; transition:all .2s; text-align:center;
+    }
+    .stage-card:hover:not(.locked) { border-color:var(--accent); transform:translateY(-2px); }
+    .stage-card.done  { border-color:#16a34a; background:#052e16; }
+    .stage-card.locked { opacity:.4; cursor:not-allowed; }
+    .s-emoji  { font-size:2rem; margin-bottom:6px; }
+    .s-num    { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    .s-title  { font-size:.9rem; font-weight:700; margin-top:4px; }
+    .s-stars  { font-size:.75rem; color:#fbbf24; margin-top:4px; }
+
+    /* ── BRIEFING (事件ファイル風) ── */
+    body.brief-mode { background:#2a1810; }
+
+    #s-brief {
+      background:
+        repeating-linear-gradient(
+          transparent, transparent 31px,
+          rgba(139,0,0,0.05) 31px, rgba(139,0,0,0.05) 32px
+        ),
+        #f4ecd8;
+      color:#3d2914;
+      font-family: 'Yu Mincho', 'Hiragino Mincho ProN', 'MS Mincho', serif;
+      box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    }
+    #s-brief .back-btn { color:#8b4513; }
+
+    .brief-header {
+      display:flex; align-items:center; gap:12px;
+      padding-bottom:10px; margin-bottom:20px;
+      border-bottom:2px double #8b0000;
+    }
+    .brief-stage-lbl {
+      flex:1; font-size:.78rem; color:#8b0000;
+      font-weight:700; letter-spacing:.2em;
+    }
+    .brief-stamp {
+      display:inline-block;
+      border:2px solid #8b0000; color:#8b0000;
+      padding:3px 10px;
+      font-weight:900; letter-spacing:.25em; font-size:.7rem;
+      transform:rotate(-4deg);
+      background:rgba(255,255,255,0.35);
+      font-family: 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+    }
+
+    .brief-hero { text-align:center; margin-bottom:22px; }
+    .brief-emoji { font-size:4rem; line-height:1; }
+    .brief-title {
+      font-size:1.55rem; font-weight:800;
+      color:#3d2914; margin-top:8px;
+      text-decoration:underline;
+      text-decoration-color:#b8860b;
+      text-underline-offset:6px;
+    }
+    .brief-stars { font-size:.95rem; color:#b8860b; margin-top:4px; }
+
+    .brief-card {
+      background:rgba(255,252,240,0.7);
+      border:1px solid #b8860b;
+      border-left:5px solid #8b0000;
+      border-radius:3px;
+      padding:16px 18px; margin-bottom:14px;
+      box-shadow: 2px 2px 0 rgba(139,69,19,0.18);
+    }
+    .brief-label {
+      font-size:.72rem; color:#8b0000;
+      font-weight:700; letter-spacing:.15em; margin-bottom:8px;
+    }
+    .brief-text {
+      font-size:.95rem; line-height:1.85;
+      color:#3d2914; white-space:pre-line;
+    }
+
+    .brief-goal {
+      background:rgba(255,252,240,0.7);
+      border:1px solid #b8860b;
+      border-left:5px solid #1e3a8a;
+      border-radius:3px;
+      padding:16px 18px; margin-bottom:14px;
+      box-shadow: 2px 2px 0 rgba(139,69,19,0.18);
+    }
+    .brief-goal-label {
+      font-size:.72rem; color:#1e3a8a;
+      font-weight:700; letter-spacing:.15em; margin-bottom:6px;
+    }
+    .brief-goal-text {
+      font-size:1.05rem; font-weight:700; color:#3d2914; line-height:1.5;
+    }
+
+    .brief-hint {
+      font-size:.82rem; color:#5a3a1e; line-height:1.7;
+      padding:12px 14px;
+      background:rgba(255,235,153,0.4);
+      border:1px dashed #b8860b;
+      border-radius:3px; margin-bottom:18px;
+    }
+    .brief-hint strong { color:#8b0000; }
+
+    #s-brief .btn-primary {
+      background:linear-gradient(135deg,#3d2914,#6b4423);
+      color:#f4ecd8;
+      font-family:'Yu Mincho','Hiragino Mincho ProN',serif;
+      letter-spacing:.2em;
+      box-shadow: 2px 2px 0 rgba(139,69,19,0.3);
+    }
+    #s-brief .btn-primary:hover {
+      box-shadow: 0 8px 24px rgba(61,41,20,0.5);
+    }
+
+    /* ── GAME ── */
+    .game-header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    .back-btn  { background:none; border:none; color:var(--muted); font-size:1.4rem; cursor:pointer; padding:4px 8px; }
+    .prog-bar  { flex:1; height:6px; background:var(--border); border-radius:99px; overflow:hidden; }
+    .prog-fill { height:100%; background:linear-gradient(90deg,#6366f1,#a855f7);
+                 border-radius:99px; transition:width .4s; }
+    .step-lbl  { font-size:.8rem; color:var(--muted); white-space:nowrap; }
+
+    .case-summary {
+      background:#1a2436; border-left:3px solid #ef4444;
+      border-radius:8px; padding:10px 12px; margin-bottom:12px;
+      font-size:.78rem; color:#cbd5e1; line-height:1.7;
+      display:flex; gap:8px; align-items:flex-start;
+    }
+    .case-summary .cs-icon { flex-shrink:0; }
+    .case-summary .cs-text { white-space:pre-line; flex:1; }
+    .case-summary .cs-text strong { color:#fca5a5; font-weight:700; margin-right:4px; }
+
+    .prop-card { background:var(--card); border:1px solid var(--border); border-radius:16px;
+                 padding:18px; margin-bottom:14px; }
+    .prop-lbl  { font-size:.68rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:5px; }
+    .prop-text { font-size:1.05rem; font-weight:700; line-height:1.5; }
+
+    .assum-card { background:#1c1208; border:1px solid #b45309; border-radius:12px;
+                  padding:14px 16px; margin-bottom:14px; display:none;
+                  flex-direction:row; align-items:flex-start; gap:10px; }
+    .assum-card.visible { display:flex; }
+    .assum-icon { font-size:1.1rem; flex-shrink:0; margin-top:2px; }
+    .assum-lbl  { font-size:.68rem; color:#fbbf24; text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+    .assum-text { font-size:.9rem; color:#fde68a; line-height:1.5; }
+
+    .chain-log  { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+    .chain-item { display:flex; align-items:flex-start; gap:8px; font-size:.85rem; color:#86efac; }
+    .chain-arrow { color:#4ade80; font-weight:700; flex-shrink:0; }
+
+    .q-card   { background:var(--card); border:1px solid var(--border); border-radius:16px;
+                padding:20px; }
+    .q-sit    { font-size:.88rem; color:var(--muted); margin-bottom:12px; line-height:1.6; white-space:pre-line; }
+    .q-sit:empty { display:none; }
+    .q-text   { font-size:1rem; font-weight:700; margin-bottom:16px; line-height:1.5; white-space:pre-line; }
+    .choices  { display:flex; flex-direction:column; gap:10px; }
+
+    .choice-btn {
+      background:var(--bg); border:1.5px solid var(--border); border-radius:12px;
+      padding:13px 16px; text-align:left; font-size:.9rem; cursor:pointer;
+      color:var(--text); transition:all .2s; width:100%; line-height:1.5;
+    }
+    .choice-btn:hover:not(:disabled) { border-color:var(--accent); background:#1e1b4b; }
+    .choice-btn.correct { border-color:#16a34a; background:#052e16; color:#4ade80; }
+    .choice-btn.wrong   { border-color:#dc2626; background:#450a0a; color:#f87171; }
+    .choice-btn:disabled { cursor:default; }
+
+    .feedback { margin-top:12px; padding:12px 16px; border-radius:10px; font-size:.88rem; line-height:1.6; }
+    .feedback.ok  { background:#052e16; border:1px solid #16a34a; color:#4ade80; }
+    .feedback.ng  { background:#450a0a; border:1px solid #dc2626; color:#f87171; }
+
+    .next-wrap { margin-top:16px; text-align:right; display:none; }
+
+    /* ── CONTRADICTION ── */
+    #s-contra { justify-content:center; align-items:center; text-align:center; gap:20px; }
+    .contra-boom { font-size:5rem; animation:boom .6s ease-out; }
+    .contra-text { font-size:2.5rem; font-weight:900; color:#f87171;
+                   text-shadow:0 0 40px rgba(248,113,113,.7);
+                   animation:shake .5s ease-in-out 3; }
+    .contra-sub  { font-size:1rem; color:var(--muted); max-width:400px; line-height:1.7; white-space:pre-line; }
+    @keyframes shake {
+      0%,100% { transform:translateX(0); }
+      25% { transform:translateX(-8px); }
+      75% { transform:translateX(8px); }
+    }
+    @keyframes boom {
+      0%   { transform:scale(0); opacity:0; }
+      60%  { transform:scale(1.3); }
+      100% { transform:scale(1); opacity:1; }
+    }
+
+    /* ── COMPLETE ── */
+    #s-complete .hero    { text-align:center; margin-bottom:16px; }
+    #s-complete .hero-icon { font-size:3rem; }
+    #s-complete h2       { font-size:1.4rem; margin:6px 0; }
+    .stars-row { font-size:1.6rem; color:#fbbf24; }
+    .proof-box { background:var(--card); border:1px solid var(--border); border-radius:16px;
+                 padding:18px; margin:14px 0; }
+    .proof-step { display:flex; gap:12px; margin-bottom:10px; font-size:.85rem; line-height:1.5; align-items:flex-start; }
+    .proof-step:last-child { margin-bottom:0; }
+    .ps-icon { width:24px; height:24px; border-radius:50%; display:flex; align-items:center;
+               justify-content:center; font-size:.7rem; font-weight:700; flex-shrink:0; }
+    .ps-assum   .ps-icon { background:#92400e; color:#fde68a; }
+    .ps-logic   .ps-icon { background:#1e3a5f; color:#93c5fd; }
+    .ps-contra  .ps-icon { background:#5b21b6; color:#ddd6fe; }
+    .ps-done    .ps-icon { background:#166534; color:#86efac; }
+
+    .rule-box { font-size:.83rem; color:var(--muted); line-height:1.7; padding:14px 16px;
+                background:var(--card); border-radius:12px; margin-bottom:16px; }
+    .rule-box strong { color:var(--text); }
+
+    .bottom-btns { margin-top:auto; padding-top:20px; display:flex; gap:12px; }
+    .bottom-btns .btn { flex:1; }
+
+    /* ── ALL CLEAR ── */
+    #s-allclear { justify-content:center; align-items:center; text-align:center; gap:20px; }
+    .allclear-text { font-size:1.5rem; font-weight:800; line-height:1.6; }
+    .allclear-sub  { color:var(--muted); font-size:.95rem; line-height:1.7; }
+
+    /* ── OPEN FILE BUTTON & MODAL ── */
+    .open-file-btn {
+      background:var(--card); border:1px dashed #b45309;
+      color:#fde68a; border-radius:12px;
+      padding:11px 14px; font-size:.88rem; font-weight:700;
+      cursor:pointer; width:100%; margin-top:16px;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+      transition:all .2s;
+    }
+    .open-file-btn:hover { background:#1c1208; border-color:#fbbf24; border-style:solid; }
+
+    .file-modal {
+      display:none; position:fixed; inset:0;
+      background:rgba(0,0,0,0.75); z-index:1000;
+      padding:20px; overflow-y:auto;
+      align-items:flex-start; justify-content:center;
+    }
+    .file-modal.open { display:flex; }
+    .file-modal-content {
+      background:
+        repeating-linear-gradient(
+          transparent, transparent 31px,
+          rgba(139,0,0,0.05) 31px, rgba(139,0,0,0.05) 32px
+        ),
+        #f4ecd8;
+      color:#3d2914;
+      font-family:'Yu Mincho','Hiragino Mincho ProN','MS Mincho',serif;
+      border-radius:6px; padding:26px 20px 20px;
+      max-width:580px; width:100%; position:relative;
+      box-shadow:0 10px 50px rgba(0,0,0,0.6);
+      margin:0 auto;
+    }
+    .file-close-x {
+      position:absolute; top:8px; right:10px;
+      background:rgba(139,0,0,0.1);
+      border:1.5px solid #8b0000; color:#8b0000;
+      width:36px; height:36px; border-radius:50%;
+      font-size:1.4rem; font-weight:900; line-height:1;
+      cursor:pointer; padding:0;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .file-close-x:hover { background:#8b0000; color:#f4ecd8; }
+
+    .file-modal-header {
+      display:flex; align-items:center; gap:12px;
+      margin-bottom:16px; padding-bottom:12px;
+      border-bottom:2px double #8b0000;
+    }
+    .file-modal-emoji { font-size:2rem; }
+    .file-modal-title { font-size:1.2rem; font-weight:800; color:#3d2914; }
+
+    .file-modal-section {
+      background:rgba(255,252,240,0.7);
+      border:1px solid #b8860b;
+      border-left:5px solid #8b0000;
+      border-radius:3px; padding:14px 16px;
+      margin-bottom:12px;
+      box-shadow:2px 2px 0 rgba(139,69,19,0.18);
+    }
+    .file-modal-goal-section { border-left-color:#1e3a8a; }
+    .file-modal-label {
+      font-size:.72rem; font-weight:700;
+      letter-spacing:.15em; margin-bottom:6px; color:#8b0000;
+    }
+    .file-modal-goal-section .file-modal-label { color:#1e3a8a; }
+    .file-modal-text { font-size:.92rem; line-height:1.85; white-space:pre-line; }
+    .file-modal-goal { font-size:1rem; font-weight:700; line-height:1.5; }
+
+    .file-close-btn {
+      width:100%; margin-top:12px;
+      background:linear-gradient(135deg,#3d2914,#6b4423);
+      color:#f4ecd8; border:none; border-radius:10px;
+      padding:14px; font-size:1rem; font-weight:700;
+      font-family:'Yu Mincho','Hiragino Mincho ProN',serif;
+      letter-spacing:.25em; cursor:pointer;
+      display:flex; align-items:center; justify-content:center; gap:8px;
+    }
+    .file-close-btn:hover { background:linear-gradient(135deg,#6b4423,#8b4513); }
+
+    /* ── UTILS ── */
+    .mt-auto { margin-top:auto; }
+    .full    { width:100%; }
+    .mb-4    { margin-bottom:16px; }
+  </style>
+</head>
+<body>
+
+<!-- ━━━ TITLE ━━━ -->
+<div id="s-title" class="screen active">
+  <div class="title-logo">🔍</div>
+  <div>
+    <div class="title-main">The 背理法探偵</div>
+    <div class="title-sub">逆を仮定して、矛盾から真実にたどり着け！</div>
+  </div>
+  <button class="btn btn-primary" onclick="gotoStages()">スタート →</button>
+  <p style="font-size:.85rem; color:var(--muted)">全4ステージ</p>
+</div>
+
+<!-- ━━━ STAGE SELECT ━━━ -->
+<div id="s-stages" class="screen">
+  <h2>事件ファイル</h2>
+  <p style="font-size:.85rem; color:var(--muted); margin-top:4px">順番に解決していこう</p>
+  <div class="stage-grid" id="stage-grid"></div>
+  <div class="mt-auto" style="padding-top:20px">
+    <button class="btn btn-secondary" onclick="show('s-title')">← 戻る</button>
+  </div>
+</div>
+
+<!-- ━━━ BRIEFING ━━━ -->
+<div id="s-brief" class="screen">
+  <div class="brief-header">
+    <button class="back-btn" onclick="gotoStages()">←</button>
+    <div class="brief-stage-lbl" id="brief-stage-lbl"></div>
+    <div class="brief-stamp">極 秘</div>
+  </div>
+
+  <div class="brief-hero">
+    <div class="brief-emoji" id="brief-emoji"></div>
+    <div class="brief-title" id="brief-title"></div>
+    <div class="brief-stars" id="brief-stars"></div>
+  </div>
+
+  <div class="brief-card">
+    <div class="brief-label">📋 事件の概要</div>
+    <div class="brief-text" id="brief-text"></div>
+  </div>
+
+  <div class="brief-goal">
+    <div class="brief-goal-label">🎯 君が導きたい結論</div>
+    <div class="brief-goal-text" id="brief-goal"></div>
+  </div>
+
+  <div class="brief-hint">
+    <strong>背理法のヒント：</strong>この結論を直接示すのは難しい。<br>
+    「結論の<u>逆</u>」を一度仮定して、そこから<u>矛盾</u>を引き出そう。
+  </div>
+
+  <div class="mt-auto" style="padding-top:8px">
+    <button class="btn btn-primary full" onclick="startStage()">推理スタート →</button>
+  </div>
+</div>
+
+<!-- ━━━ GAME ━━━ -->
+<div id="s-game" class="screen">
+  <div class="game-header">
+    <button class="back-btn" onclick="backToBrief()">←</button>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+    <div class="step-lbl" id="step-lbl"></div>
+  </div>
+
+  <div class="case-summary" id="case-summary">
+    <span class="cs-icon">📋</span>
+    <span class="cs-text" id="case-summary-text"></span>
+  </div>
+
+  <div class="prop-card">
+    <div class="prop-lbl">🎯 導きたい結論</div>
+    <div class="prop-text" id="prop-text"></div>
+  </div>
+
+  <div class="assum-card" id="assum-card">
+    <div class="assum-icon">⚠️</div>
+    <div>
+      <div class="assum-lbl">🔄 逆を仮定してみる</div>
+      <div class="assum-text" id="assum-text"></div>
+    </div>
+  </div>
+
+  <div class="chain-log" id="chain-log"></div>
+
+  <div class="q-card">
+    <div class="q-sit"  id="q-sit"></div>
+    <div class="q-text" id="q-text"></div>
+    <div class="choices" id="choices"></div>
+    <div id="feedback"></div>
+    <div class="next-wrap" id="next-wrap">
+      <button class="btn btn-primary" onclick="nextStep()">次へ →</button>
+    </div>
+  </div>
+
+  <button class="open-file-btn" onclick="openFile()">
+    📋 事件ファイルをもう一度見る
+  </button>
+</div>
+
+<!-- ━━━ FILE MODAL ━━━ -->
+<div id="file-modal" class="file-modal" onclick="if(event.target===this)closeFile()">
+  <div class="file-modal-content">
+    <button class="file-close-x" onclick="closeFile()" aria-label="閉じる">×</button>
+
+    <div class="file-modal-header">
+      <span class="file-modal-emoji" id="file-modal-emoji"></span>
+      <span class="file-modal-title" id="file-modal-title"></span>
+    </div>
+
+    <div class="file-modal-section">
+      <div class="file-modal-label">📋 事件の概要</div>
+      <div class="file-modal-text" id="file-modal-text"></div>
+    </div>
+
+    <div class="file-modal-section file-modal-goal-section">
+      <div class="file-modal-label">🎯 導きたい結論</div>
+      <div class="file-modal-goal" id="file-modal-goal"></div>
+    </div>
+
+    <button class="file-close-btn" onclick="closeFile()">✕ 閉じる</button>
+  </div>
+</div>
+
+<!-- ━━━ CONTRADICTION ━━━ -->
+<div id="s-contra" class="screen">
+  <div class="contra-boom">💥</div>
+  <div class="contra-text">矛盾発見！</div>
+  <div class="contra-sub" id="contra-sub"></div>
+  <button class="btn btn-primary" onclick="showComplete()" style="margin-top:12px">
+    推理をふり返る →
+  </button>
+</div>
+
+<!-- ━━━ COMPLETE ━━━ -->
+<div id="s-complete" class="screen">
+  <div class="hero">
+    <div class="hero-icon">🔍</div>
+    <h2>事件解決！</h2>
+    <div class="stars-row" id="stars-row"></div>
+  </div>
+
+  <div class="prop-card mb-4">
+    <div class="prop-lbl">✅ 導かれた結論</div>
+    <div class="prop-text" id="cmp-prop"></div>
+  </div>
+
+  <div class="proof-box" id="proof-box"></div>
+
+  <div class="rule-box">
+    <strong>君が使った推理の型 ＝ 背理法</strong><br>
+    ① 結論の「逆」を仮定してみる<br>
+    ② その仮定から矛盾を導く<br>
+    ③ 矛盾が出たので仮定はウソ<br>
+    ④ よって元の結論が真！
+  </div>
+
+  <div class="bottom-btns">
+    <button class="btn btn-primary full" onclick="gotoStages()">事件ファイル一覧へ →</button>
+  </div>
+</div>
+
+<!-- ━━━ ALL CLEAR ━━━ -->
+<div id="s-allclear" class="screen">
+  <div style="font-size:5rem">🏆</div>
+  <div class="allclear-text">全事件、解決！</div>
+  <div class="allclear-sub">
+    4つの謎を「逆を仮定 → 矛盾を発見」で解いた。<br><br>
+    この推理の型こそ、数学の<strong style="color:#fbbf24">背理法</strong>。<br>
+    教科書の「√2 は無理数」「1+√2 は無理数」も、<br>君が今やった推理と同じ流れで証明できる！
+  </div>
+  <button class="btn btn-primary" onclick="gotoStages()">もう一度挑戦</button>
+</div>
+
+<script>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GAME DATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+const STAGES = [
+  {
+    emoji: '🍱', title: '消えた弁当事件', stars: '★☆☆',
+    prop: '田中は犯人ではない',
+    negation: '「田中が犯人だ」と仮定してみよう',
+    summary: '<strong>事件:</strong>佐藤の弁当が教室から消失（12:30〜12:45）／容疑者：田中・鈴木・山田\n<strong>証言:</strong>田中は職員室で先生と進路面談中（12:30〜12:50）',
+    brief: '2年A組の佐藤くんの弁当が、4限終了後の 12:30〜12:45 に教室の机から消えた。\n\n【容疑者】田中・鈴木・山田の3人\n田中は「自分はやってない」と主張している。\n\n【先生の証言】\n「田中は 12:30〜12:50 まで職員室で私と進路面談をしていた」',
+    steps: [
+      {
+        sit: 'まず田中の動向を調べてみよう。',
+        q: 'もし田中が犯人だとしたら、その時間どこにいたはず？',
+        choices: [
+          { t:'弁当があった「教室」', ok:true,
+            log:'仮定：田中が犯人 → 12:30〜12:45 教室にいたはず',
+            fb:'そう！犯行現場である教室にいたはず。' },
+          { t:'弁当を買いに「購買部」', ok:false,
+            fb:'購買にいたら教室の弁当は盗めないよ。犯人なら現場にいるはず。' },
+          { t:'家に帰っていた', ok:false,
+            fb:'家にいたら教室の弁当は盗めない。犯人なら教室にいるはず。' },
+        ]
+      },
+      {
+        sit: '一方、事件ファイルの先生の証言を思い出そう。',
+        q: '先生の証言によると、田中は 12:30〜12:50 どこにいた？',
+        choices: [
+          { t:'職員室（先生と面談中）', ok:true,
+            log:'証言：12:30〜12:50 田中は職員室で面談中',
+            fb:'先生という信頼できる証人がいる。田中は職員室にいた。' },
+          { t:'教室', ok:false,
+            fb:'先生の証言を信じよう。田中は職員室にいた。' },
+          { t:'場所はわからない', ok:false,
+            fb:'先生がはっきり証言している。田中は職員室にいた。' },
+        ]
+      },
+      {
+        sit: '仮定では「教室にいたはず」、証言では「職員室にいた」。',
+        q: 'この2つを並べると何が起きている？',
+        choices: [
+          { t:'田中が同じ時間に教室と職員室の両方にいたことになる（不可能）', ok:true,
+            log:'同じ時間に2か所にいるのは物理的に不可能',
+            fb:'そう！人間は同時に2か所には存在できない。' },
+          { t:'田中が教室から職員室に移動した', ok:false,
+            fb:'弁当が消えたのも面談も同じ「12:30〜」の時間帯。移動では説明できない。' },
+          { t:'先生の証言は嘘かもしれない', ok:false,
+            fb:'証言を疑い始めるとキリがない。今は与えられた証言を事実として推理しよう。' },
+        ]
+      },
+      {
+        sit: '人間は同じ時間に2か所にいられない。でも仮定だと両方にいることになってしまう。',
+        q: 'これは何？',
+        choices: [
+          { t:'矛盾！「田中が犯人」という仮定は崩れた', ok:true, contra:true,
+            log:'⚡ 矛盾発見！「田中が犯人」はありえない',
+            fb:'矛盾発見！物理的に不可能なことが起きてしまう。仮定の方が間違っている！' },
+          { t:'もう少し調査が必要', ok:false,
+            fb:'もう答えは出ているよ！不可能なことが起きるなら仮定が間違いだ。' },
+          { t:'田中はやはり犯人だ', ok:false,
+            fb:'仮定通りなら不可能なことが起きてしまう。これは仮定が間違っているしるし！' },
+        ]
+      }
+    ],
+    proofSteps: [
+      { type:'assum',  i:'仮', t:'「田中が犯人」と逆を仮定' },
+      { type:'logic',  i:'①',  t:'犯人なら犯行時間に教室にいたはず' },
+      { type:'logic',  i:'②',  t:'しかし証言では田中は職員室で面談中' },
+      { type:'logic',  i:'③',  t:'同じ時間に2か所には存在できない' },
+      { type:'contra', i:'⚡', t:'矛盾！仮定は成り立たない' },
+      { type:'done',   i:'✓',  t:'よって、田中は犯人ではない（無実）' },
+    ]
+  },
+
+  {
+    emoji: '📚', title: '図書室の盗難', stars: '★★☆',
+    prop: '本を持ち出したのは B である',
+    negation: '「B は持ち出していない」と仮定してみよう',
+    summary: '<strong>事件:</strong>図書室から本が消失（14:00〜14:30、いたのは A・B・C のみ）\n<strong>証言:</strong>A は司書と一緒／C は窓際で居眠り（複数の目撃）',
+    brief: '14:00〜14:30 に図書室から「相対性理論」が無断で持ち出された。\n監視カメラから、その時間に図書室にいたのは A・B・C の3人だけ。\n3人とも「自分はやってない」と主張している。\n\n【司書の証言】\n「A は 14:00〜14:30 ずっと私の手伝いをしてくれていた」\n\n【複数の生徒の目撃証言】\n「C は窓際でずっと居眠りしていた」',
+    steps: [
+      {
+        sit: 'まず犯人候補を絞ろう。',
+        q: 'B が犯人でないと仮定する。すると犯人は誰の中にいる？',
+        choices: [
+          { t:'A か C のどちらか', ok:true,
+            log:'仮定：B は無実 → 犯人は A か C',
+            fb:'その時間に図書室にいたのは A・B・C だけ。B が無実なら犯人は A か C のいずれか。' },
+          { t:'外部からの侵入者', ok:false,
+            fb:'監視カメラで「その時間に図書室にいたのは3人だけ」と確認済み。外部犯はありえない。' },
+          { t:'犯人はいないかもしれない', ok:false,
+            fb:'本は実際に消えている。犯人は必ずいる。' },
+        ]
+      },
+      {
+        sit: 'まず A を確認しよう。',
+        q: '事件ファイルの【司書の証言】から、A は犯行可能？',
+        choices: [
+          { t:'不可能（ずっと司書と一緒＝アリバイ成立）', ok:true,
+            log:'A：司書と一緒 → アリバイあり',
+            fb:'ずっと司書のそばにいたなら、こっそり本を持ち出す隙はない。' },
+          { t:'可能（手伝いの合間に持ち出せる）', ok:false,
+            fb:'司書が「ずっと」と証言している。途中で離れたとは言っていない。' },
+          { t:'A が司書を騙していたかも', ok:false,
+            fb:'今は証言を事実として推理しよう。証言を疑い始めると推理が止まる。' },
+        ]
+      },
+      {
+        sit: '次に C を確認しよう。',
+        q: '事件ファイルの【目撃証言】から、C は犯行可能？',
+        choices: [
+          { t:'不可能（複数人が居眠りを目撃＝アリバイ成立）', ok:true,
+            log:'C：居眠り（複数の目撃証言） → アリバイあり',
+            fb:'複数人の目撃証言は強い。C は寝ていて本棚には近づいていない。' },
+          { t:'可能（寝たフリだったかも）', ok:false,
+            fb:'複数の生徒がはっきり見ている。寝たフリで本棚まで往復するのは無理。' },
+          { t:'目撃者が全員グルかも', ok:false,
+            fb:'証言を素直に受け取ろう。今は与えられた情報で推理する。' },
+        ]
+      },
+      {
+        sit: 'A もアリバイあり、C もアリバイあり。仮定どおり B も無実なら…',
+        q: '犯人はどうなる？',
+        choices: [
+          { t:'犯人になれる人がいなくなる', ok:true,
+            log:'A・B・C 全員無実 → 犯人不在',
+            fb:'その時間に図書室にいたのは3人だけ。全員無実なら犯人がいない。' },
+          { t:'A が嘘をついている', ok:false,
+            fb:'証言を疑い始めるとキリがない。与えられた証言を信じて推理しよう。' },
+          { t:'4人目がいた', ok:false,
+            fb:'監視カメラで「その時間は3人だけ」と確認済み。第4の人物はいない。' },
+        ]
+      },
+      {
+        sit: 'でも本は実際に消えている。誰かが必ず持ち出している。',
+        q: 'これは何？',
+        choices: [
+          { t:'矛盾！本が消えたのに犯人になれる人がいない', ok:true, contra:true,
+            log:'⚡ 矛盾！全員無実では事件が起こせない',
+            fb:'矛盾発見！「B 無実」の仮定では事件そのものが説明できない。仮定が間違いだ！' },
+          { t:'本は元から無かったのかも', ok:false,
+            fb:'本は確かに存在した。事件は起きている。' },
+          { t:'もっと調査が必要', ok:false,
+            fb:'もう必要な情報はそろっている。仮定の方を疑おう。' },
+        ]
+      }
+    ],
+    proofSteps: [
+      { type:'assum',  i:'仮', t:'「B は犯人ではない」と逆を仮定' },
+      { type:'logic',  i:'①',  t:'犯行時刻に図書室にいたのは A・B・C のみ' },
+      { type:'logic',  i:'②',  t:'A はアリバイあり（司書の証言）' },
+      { type:'logic',  i:'③',  t:'C もアリバイあり（複数の目撃証言）' },
+      { type:'contra', i:'⚡', t:'全員無実なら犯人不在 → 本が消えたことと矛盾！' },
+      { type:'done',   i:'✓',  t:'よって、本を持ち出したのは B である' },
+    ]
+  },
+
+  {
+    emoji: '🎒', title: '黒いリュックの謎', stars: '★★☆',
+    prop: 'A の証言は嘘である（A が犯人）',
+    negation: '「A の証言は本当（A は無実）」と仮定してみよう',
+    summary: '<strong>事件:</strong>部室からトロフィー盗難（17:00、容疑者 A・B・C 全員「無実」と主張）\n<strong>証拠:</strong>犯人は黒リュック持参（警備員）／A=黒, B=赤, C=手ぶら',
+    brief: '17:00、部室から優勝トロフィーが盗まれた。\n容疑者 A・B・C は全員「自分はやってない」と主張。犯人は1人だけ。\n\n【警備員の目撃証言】\n「犯行直後、現場から〈黒いリュック〉を背負った人物が立ち去った」\n\n【犯行時刻 17:00 の3人の様子】\n・A：黒いリュックを背負っていた（友人複数の目撃）\n・B：赤いリュック（部活の集合写真）\n・C：手ぶら（防犯カメラ）',
+    steps: [
+      {
+        sit: 'まず A の証言を信じてみよう。',
+        q: 'A の証言を本当だと仮定する。すると犯人は？',
+        choices: [
+          { t:'B か C のどちらか', ok:true,
+            log:'仮定：A は無実 → 犯人は B か C',
+            fb:'A が無実なら、犯人は残る B か C のはず。' },
+          { t:'A 自身', ok:false,
+            fb:'仮定で「A は無実」としたので、A は犯人候補から外れる。' },
+          { t:'犯人はいない', ok:false,
+            fb:'トロフィーは実際に消えている。犯人は必ずいる。' },
+          { t:'A・B・C 全員で共謀した（犯人は3人）', ok:false,
+            fb:'事件ファイルに「犯人は1人だけ」と書いてある。共謀はありえない。' },
+        ]
+      },
+      {
+        sit: 'まず犯人の特徴を整理しよう。',
+        q: '事件ファイルの【警備員の目撃証言】によると、犯人は何を持っていた？',
+        choices: [
+          { t:'黒いリュックを背負っていた', ok:true,
+            log:'証拠：犯人は黒いリュックを背負っていた',
+            fb:'警備員の目撃証言から、犯人は黒いリュックの人物。' },
+          { t:'手ぶらだった', ok:false,
+            fb:'警備員が「黒いリュック」をはっきり目撃している。' },
+          { t:'特定できない', ok:false,
+            fb:'警備員の証言があるので「黒いリュック」と特定できる。' },
+          { t:'黒いリュックと帽子を身につけていた', ok:false,
+            fb:'警備員の証言には「帽子」の情報はない。事件ファイルにない情報を勝手に追加しない。' },
+        ]
+      },
+      {
+        sit: 'B を確認しよう。',
+        q: '事件ファイルによると、B は犯行時刻に何を背負っていた？',
+        choices: [
+          { t:'赤いリュック（＝犯人特徴と一致しない）', ok:true,
+            log:'B：赤いリュック → 犯人ではない',
+            fb:'B は赤いリュックなので「黒いリュック」の犯人像と合わない。B は無実。' },
+          { t:'黒いリュック', ok:false,
+            fb:'写真をよく見て！B は赤いリュックを背負っている。' },
+          { t:'手ぶら', ok:false,
+            fb:'写真には赤いリュックがはっきり写っている。' },
+          { t:'当日だけ黒いリュックを背負っていた可能性もある', ok:false,
+            fb:'集合写真という客観的な記録があるので「赤いリュック」で確定。憶測で覆さない。' },
+        ]
+      },
+      {
+        sit: '次に C を確認しよう。',
+        q: '事件ファイルによると、C は犯行時刻に何を持っていた？',
+        choices: [
+          { t:'手ぶら（＝犯人特徴と一致しない）', ok:true,
+            log:'C：手ぶら → 犯人ではない',
+            fb:'C は手ぶら。「黒いリュック」の犯人像と合わない。C も無実。' },
+          { t:'黒いリュック', ok:false,
+            fb:'防犯カメラ映像では C は手ぶら。' },
+          { t:'カバンを持っていた', ok:false,
+            fb:'カメラ映像では C は何も持っていない。' },
+          { t:'当日だけ黒いリュックを背負っていた可能性もある', ok:false,
+            fb:'防犯カメラという客観的な記録があるので「手ぶら」で確定。憶測で覆さない。' },
+        ]
+      },
+      {
+        sit: 'B も C も犯人特徴と合わない。\n事件ファイルでは、黒いリュックを持っていたのは A だけ。\nでも仮定では「A は無実」だった。',
+        q: 'これは何？',
+        choices: [
+          { t:'矛盾！犯人特徴に合うのは A だけなのに、A 無実だと犯人不在になる', ok:true, contra:true,
+            log:'⚡ 矛盾！黒いリュックは A だけ → A 無実なら犯人不在',
+            fb:'矛盾発見！「黒いリュックの犯人」がいるはずなのに、A 以外は条件に合わない。A の無実は崩れた！' },
+          { t:'警備員の見間違い', ok:false,
+            fb:'与えられた証拠を信じて推理しよう。証拠を疑い始めると何も結論できない。' },
+          { t:'4人目の犯人がいる', ok:false,
+            fb:'容疑者は A・B・C の3人だけと最初に確認済み。' },
+          { t:'A は犯行時に別のリュックに持ち替えた可能性', ok:false,
+            fb:'友人複数が「いつもの黒いリュック」を目撃。当日だけ持ち替えたという憶測は証言と矛盾する。' },
+        ]
+      }
+    ],
+    proofSteps: [
+      { type:'assum',  i:'仮', t:'「A の証言は本当（A は無実）」と逆を仮定' },
+      { type:'logic',  i:'①',  t:'犯人は黒いリュックを背負っていた（警備員）' },
+      { type:'logic',  i:'②',  t:'B は赤いリュック、C は手ぶら → 共に犯人特徴と不一致' },
+      { type:'logic',  i:'③',  t:'黒いリュックを持つのは A だけ' },
+      { type:'contra', i:'⚡', t:'A が無実だと犯人になれる人がいない → 矛盾！' },
+      { type:'done',   i:'✓',  t:'よって、A の証言は嘘。A が犯人' },
+    ]
+  },
+
+  {
+    emoji: '🔐', title: '完全密室の謎', stars: '★★★',
+    prop: '犯人は家の中の人物（内部犯）である',
+    negation: '「犯人は外部の人間（外部犯）」と仮定してみよう',
+    summary: '<strong>事件:</strong>密室の書斎から書類盗難／容疑者：家族 or 外部犯\n<strong>現場:</strong>窓＝鉄格子無傷／ドア＝内側施錠／換気口は通れない',
+    brief: '夜中に書斎の金庫から重要書類が盗まれた。\n\n【現場検証の結果】\n・窓には頑丈な鉄格子（曲げられた跡も切られた跡もない）\n・ドアは内側から施錠されていた（朝、家族が外から壊して開けた）\n・換気口は人が通れるサイズではない\n\n【容疑者】\n金庫の暗証番号を知るのは家族3人のみ。\n犯人は外部の人間か、それとも家族か？',
+    steps: [
+      {
+        sit: 'まず侵入経路を確認しよう。',
+        q: '犯人が外部の人間だと仮定する。侵入経路はどこ？',
+        choices: [
+          { t:'窓 または ドア（他に経路はない）', ok:true,
+            log:'仮定：外部犯 → 侵入経路は窓 or ドアのみ',
+            fb:'物理的に外から入る方法は、窓かドアの2択しかない。' },
+          { t:'屋根の隙間から', ok:false,
+            fb:'書斎の屋根に侵入経路はない。窓 or ドアの2択。' },
+          { t:'壁を壊して', ok:false,
+            fb:'壁が壊された形跡はない。侵入は窓 or ドア。' },
+          { t:'床下や天井裏を経由して', ok:false,
+            fb:'事件ファイルにそうした経路の記述はない。書斎は窓・ドア・換気口以外で完全に封じられている。' },
+        ]
+      },
+      {
+        sit: 'まず窓を考えよう。',
+        q: '事件ファイルの【現場検証】から、外部の人間が窓から侵入できた？',
+        choices: [
+          { t:'不可能（鉄格子に異常なし）', ok:true,
+            log:'窓：鉄格子が無傷 → 侵入不可',
+            fb:'鉄格子が無傷なら、人間が通り抜けるのは不可能。' },
+          { t:'可能（鉄格子の隙間から）', ok:false,
+            fb:'頑丈な鉄格子の隙間から人間は通れない。' },
+          { t:'可能（鉄格子は飾りだから）', ok:false,
+            fb:'「頑丈な鉄格子」と書いてある。飾りではない。' },
+          { t:'可能（事前に取り外して、犯行後に元に戻した）', ok:false,
+            fb:'「曲げられた跡も切られた跡もない」と確認済み。短時間で取り外し再設置するのは現実的でない。' },
+        ]
+      },
+      {
+        sit: '次にドアを考えよう。',
+        q: '事件ファイルの【現場検証】から、外部の人間がドアの鍵を開けられた？',
+        choices: [
+          { t:'不可能（内側からの施錠は外からは開けられない）', ok:true,
+            log:'ドア：内側から施錠 → 外からは開錠不可',
+            fb:'内側からの「サムターン」式の施錠は、外からは物理的に開けられない。' },
+          { t:'可能（合鍵を使えば）', ok:false,
+            fb:'内側からの施錠は合鍵では開かない。内側からしか操作できない仕組み。' },
+          { t:'可能（鍵屋を呼べば）', ok:false,
+            fb:'壊された形跡もないので、ピッキングも含めて外からの解錠は無理。' },
+          { t:'可能（糸や針金を使って外から内側のサムターンを回した）', ok:false,
+            fb:'そんな細工をすれば現場に痕跡が残るはず。「壊された形跡もない」状態と矛盾する。' },
+        ]
+      },
+      {
+        sit: '窓 ✗、ドア ✗。外部犯は侵入経路がない。',
+        q: '仮定どおり「外部犯」だとすると、書類はどう盗まれた？',
+        choices: [
+          { t:'盗めない（侵入不可能なので犯行できない）', ok:true,
+            log:'侵入経路ゼロ → 外部犯は犯行不可能',
+            fb:'入れないなら盗めない。外部犯は物理的に犯行できない。' },
+          { t:'透明人間が壁をすり抜けた', ok:false,
+            fb:'現実的に考えよう。物理法則に従う必要がある。' },
+          { t:'郵便で書類が送られた', ok:false,
+            fb:'金庫の中の書類だよ。郵便では取り出せない。' },
+          { t:'家族の誰かを脅して盗ませた（共犯）', ok:false,
+            fb:'実際に盗んだのは家族（内部の人物）になる。「外部の人間が直接盗んだ」とは言えない。' },
+        ]
+      },
+      {
+        sit: 'でも書類は実際に消えている。誰かが必ず盗んでいる。',
+        q: '「外部犯は犯行不可能」と「書類が盗まれた」。これは？',
+        choices: [
+          { t:'矛盾！外部からは入れないのに犯行が起きている', ok:true, contra:true,
+            log:'⚡ 矛盾！外部犯では事件そのものを説明できない',
+            fb:'矛盾発見！「外部犯」の仮定では事件が成立しない。仮定が間違いだ！' },
+          { t:'幽霊の仕業', ok:false,
+            fb:'論理的に考えよう。仮定そのものを疑うべきタイミング。' },
+          { t:'もっと調査が必要', ok:false,
+            fb:'必要な情報はそろっている。仮定が成り立たないと認めよう。' },
+          { t:'たまたま家族の誰かが場所を間違えただけ', ok:false,
+            fb:'事件として「盗まれた」と確定している。場所を間違えた話ではない。' },
+        ]
+      }
+    ],
+    proofSteps: [
+      { type:'assum',  i:'仮', t:'「犯人は外部の人間」と逆を仮定' },
+      { type:'logic',  i:'①',  t:'外部から入れるのは窓 or ドアのみ' },
+      { type:'logic',  i:'②',  t:'窓は鉄格子で無傷 → 通り抜け不可能' },
+      { type:'logic',  i:'③',  t:'ドアは内側から施錠 → 外からは開錠不可' },
+      { type:'contra', i:'⚡', t:'外部犯では侵入不可能なのに事件は起きた → 矛盾！' },
+      { type:'done',   i:'✓',  t:'よって、犯人は家の中の人物（内部犯）' },
+    ]
+  }
+];
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   STATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+let G = {
+  stage: 0,
+  step: 0,
+  chainLog: [],
+  mistakes: 0,
+  answered: false,
+  done: [],
+  shuffled: []
+};
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SCREEN NAV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.body.classList.toggle('brief-mode', id === 's-brief');
+  window.scrollTo(0, 0);
+}
+
+function gotoStages() {
+  renderGrid();
+  show('s-stages');
+}
+
+function backToBrief() {
+  show('s-brief');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   FILE MODAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function openFile() {
+  const s = STAGES[G.stage];
+  document.getElementById('file-modal-emoji').textContent = s.emoji;
+  document.getElementById('file-modal-title').textContent = s.title;
+  document.getElementById('file-modal-text').textContent  = s.brief;
+  document.getElementById('file-modal-goal').textContent  = s.prop;
+  document.getElementById('file-modal').classList.add('open');
+}
+
+function closeFile() {
+  document.getElementById('file-modal').classList.remove('open');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   STAGE GRID
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function renderGrid() {
+  document.getElementById('stage-grid').innerHTML = STAGES.map((s, i) => {
+    const done   = G.done.includes(i);
+    const locked = i > 0 && !G.done.includes(i - 1);
+    return `<div class="stage-card ${done?'done':''} ${locked?'locked':''}"
+                 onclick="${locked ? '' : `openBriefing(${i})`}">
+      <div class="s-emoji">${done ? '✅' : locked ? '🔒' : s.emoji}</div>
+      <div class="s-num">事件 ${i+1}</div>
+      <div class="s-title">${s.title}</div>
+      <div class="s-stars">${s.stars}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   BRIEFING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function openBriefing(i) {
+  G.stage    = i;
+  G.step     = 0;
+  G.chainLog = [];
+  G.mistakes = 0;
+  G.answered = false;
+
+  const s = STAGES[i];
+  document.getElementById('brief-stage-lbl').textContent = `事件 ${i + 1}`;
+  document.getElementById('brief-emoji').textContent     = s.emoji;
+  document.getElementById('brief-title').textContent     = s.title;
+  document.getElementById('brief-stars').textContent     = s.stars;
+  document.getElementById('brief-text').textContent      = s.brief;
+  document.getElementById('brief-goal').textContent      = s.prop;
+
+  show('s-brief');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   GAME FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function startStage() {
+  G.step     = 0;
+  G.chainLog = [];
+  G.mistakes = 0;
+  G.answered = false;
+
+  const s = STAGES[G.stage];
+  document.getElementById('case-summary-text').innerHTML = s.summary;
+  document.getElementById('prop-text').textContent  = s.prop;
+  document.getElementById('assum-text').textContent = s.negation;
+  document.getElementById('chain-log').innerHTML    = '';
+
+  const ac = document.getElementById('assum-card');
+  ac.classList.remove('visible');
+
+  show('s-game');
+
+  setTimeout(() => ac.classList.add('visible'), 300);
+  setTimeout(() => renderStep(), 600);
+}
+
+function renderStep() {
+  const s    = STAGES[G.stage];
+  const step = s.steps[G.step];
+  const total = s.steps.length;
+
+  document.getElementById('prog-fill').style.width = `${(G.step / total) * 100}%`;
+  document.getElementById('step-lbl').textContent  = `${G.step + 1} / ${total}`;
+
+  const cl = document.getElementById('chain-log');
+  cl.innerHTML = G.chainLog.map(t =>
+    `<div class="chain-item"><span class="chain-arrow">↓</span><span>${t}</span></div>`
+  ).join('');
+
+  document.getElementById('q-sit').textContent  = step.sit;
+  document.getElementById('q-text').textContent = step.q;
+  document.getElementById('feedback').innerHTML  = '';
+  document.getElementById('next-wrap').style.display = 'none';
+  G.answered = false;
+
+  G.shuffled = shuffle(step.choices);
+  document.getElementById('choices').innerHTML = G.shuffled.map((c, i) =>
+    `<button class="choice-btn" id="c${i}" onclick="pick(${i})">${c.t}</button>`
+  ).join('');
+}
+
+function pick(idx) {
+  if (G.answered) return;
+  const choice = G.shuffled[idx];
+  const btn    = document.getElementById(`c${idx}`);
+  const fb     = document.getElementById('feedback');
+
+  document.querySelectorAll('.choice-btn').forEach(b => b.disabled = true);
+
+  if (choice.ok) {
+    G.answered = true;
+    btn.classList.add('correct');
+    fb.className = 'feedback ok';
+    fb.textContent = '✓ ' + choice.fb;
+    if (choice.log) G.chainLog.push(choice.log);
+
+    if (choice.contra) {
+      setTimeout(() => triggerContradiction(), 1200);
+    } else {
+      document.getElementById('next-wrap').style.display = 'block';
+    }
+  } else {
+    G.mistakes++;
+    btn.classList.add('wrong');
+    fb.className = 'feedback ng';
+    fb.textContent = '✗ ' + choice.fb;
+    setTimeout(() => {
+      document.querySelectorAll('.choice-btn').forEach((b, i) => {
+        if (i !== idx) b.disabled = false;
+      });
+    }, 900);
+  }
+}
+
+function nextStep() {
+  G.step++;
+  renderStep();
+  window.scrollTo(0, 0);
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   CONTRADICTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function triggerContradiction() {
+  const s = STAGES[G.stage];
+  document.getElementById('contra-sub').textContent =
+    `「${s.prop}」の逆を仮定したら矛盾発生！\nよってこの結論が真実だ。`;
+  show('s-contra');
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   COMPLETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function showComplete() {
+  const s = STAGES[G.stage];
+  if (!G.done.includes(G.stage)) G.done.push(G.stage);
+
+  const stars = G.mistakes === 0 ? '⭐⭐⭐' : G.mistakes <= 2 ? '⭐⭐' : '⭐';
+  document.getElementById('stars-row').textContent  = stars;
+  document.getElementById('cmp-prop').textContent   = s.prop;
+
+  const typeClass = { assum:'ps-assum', logic:'ps-logic', contra:'ps-contra', done:'ps-done' };
+  document.getElementById('proof-box').innerHTML = s.proofSteps.map(p =>
+    `<div class="proof-step ${typeClass[p.type]}">
+       <div class="ps-icon">${p.i}</div><div>${p.t}</div>
+     </div>`
+  ).join('');
+
+  show('s-complete');
+}
+
+function goNextStage() {
+  const next = G.stage + 1;
+  if (next >= STAGES.length) {
+    show('s-allclear');
+  } else {
+    openBriefing(next);
+  }
+}
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   INIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+renderGrid();
+</script>
+</body>
+</html>
