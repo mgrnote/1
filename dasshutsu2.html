@@ -3745,6 +3745,37 @@ function buildBookTable(g){
   var p29=P(g,GB,0xfffaf0,[0.46,0.99,0],[0.28,0.05,0.225],[0,0.06,0]);
   return g;
 }
+function buildBookTable3(g){
+  var u=g.userData;
+  var p1=P(g,GB,0xc9a97e,[0,0.48,0],[1.4,0.05,0.6]);
+  var p2=P(g,GB,0x7d5f42,[-0.64,0.23,-0.24],[0.06,0.46,0.06]);
+  var p3=P(g,GB,0x7d5f42,[-0.64,0.23,0.24],[0.06,0.46,0.06]);
+  var p4=P(g,GB,0x7d5f42,[0.64,0.23,-0.24],[0.06,0.46,0.06]);
+  var p5=P(g,GB,0x7d5f42,[0.64,0.23,0.24],[0.06,0.46,0.06]);
+  var p6=P(g,GB,0xe5484d,[-0.45,0.54,0],[0.3,0.07,0.22],[0,-0.09,0]);
+  var p7=P(g,GB,0xfffaf0,[-0.44,0.54,0],[0.28,0.05,0.225],[0,-0.09,0]);
+  var p8=P(g,GB,0xb83236,[-0.45,0.615,0],[0.3,0.07,0.22],[0,-0.03,0]);
+  var p9=P(g,GB,0xfffaf0,[-0.44,0.615,0],[0.28,0.05,0.225],[0,-0.03,0]);
+  var p10=P(g,GB,0x3b82f6,[0,0.54,0],[0.3,0.07,0.22],[0,-0.09,0]);
+  var p11=P(g,GB,0xfffaf0,[0.01,0.54,0],[0.28,0.05,0.225],[0,-0.09,0]);
+  var p12=P(g,GB,0x1d4ea6,[0,0.615,0],[0.3,0.07,0.22],[0,-0.03,0]);
+  var p13=P(g,GB,0xfffaf0,[0.01,0.615,0],[0.28,0.05,0.225],[0,-0.03,0]);
+  var p14=P(g,GB,0x3b82f6,[0,0.69,0],[0.3,0.07,0.22],[0,0.03,0]);
+  var p15=P(g,GB,0xfffaf0,[0.01,0.69,0],[0.28,0.05,0.225],[0,0.03,0]);
+  var p16=P(g,GB,0x1d4ea6,[0,0.765,0],[0.3,0.07,0.22],[0,0.09,0]);
+  var p17=P(g,GB,0xfffaf0,[0.01,0.765,0],[0.28,0.05,0.225],[0,0.09,0]);
+  var p18=P(g,GB,0x3b82f6,[0,0.84,0],[0.3,0.07,0.22],[0,-0.06,0]);
+  var p19=P(g,GB,0xfffaf0,[0.01,0.84,0],[0.28,0.05,0.225],[0,-0.06,0]);
+  var p20=P(g,GB,0x1d4ea6,[0,0.915,0],[0.3,0.07,0.22],[0,0,0]);
+  var p21=P(g,GB,0xfffaf0,[0.01,0.915,0],[0.28,0.05,0.225],[0,0,0]);
+  var p22=P(g,GB,0xf2c230,[0.45,0.54,0],[0.3,0.07,0.22],[0,-0.09,0]);
+  var p23=P(g,GB,0xfffaf0,[0.46,0.54,0],[0.28,0.05,0.225],[0,-0.09,0]);
+  var p24=P(g,GB,0xc99a12,[0.45,0.615,0],[0.3,0.07,0.22],[0,-0.03,0]);
+  var p25=P(g,GB,0xfffaf0,[0.46,0.615,0],[0.28,0.05,0.225],[0,-0.03,0]);
+  var p26=P(g,GB,0xf2c230,[0.45,0.69,0],[0.3,0.07,0.22],[0,0.03,0]);
+  var p27=P(g,GB,0xfffaf0,[0.46,0.69,0],[0.28,0.05,0.225],[0,0.03,0]);
+  return g;
+}
 function buildCA(g){
   var u=g.userData;
   var p1=P(g,GB,0xe9e4d8,[0,0.06,0],[2.1,0.12,1.6]);
@@ -3842,7 +3873,7 @@ function buildHashTag(g){
   var g5=new THREE.Group();g5.position.set(0.03,0,0.007);g.add(g5);u.text=g5;
   return g;
 }
-var TPROPS_LIST={buildCell1:buildCell1,buildCell2:buildCell2,buildCell3:buildCell3,buildCage:buildCage,buildCatHut:buildCatHut,buildMouth:buildMouth,buildTray:buildTray,buildKeyMaker:buildKeyMaker,buildBucket:buildBucket,buildFrame:buildFrame,buildEasel:buildEasel,buildBookTable:buildBookTable,buildCA:buildCA,buildCert:buildCert,buildHashMachine:buildHashMachine,buildHashTag:buildHashTag};
+var TPROPS_LIST={buildCell1:buildCell1,buildCell2:buildCell2,buildCell3:buildCell3,buildCage:buildCage,buildCatHut:buildCatHut,buildMouth:buildMouth,buildTray:buildTray,buildKeyMaker:buildKeyMaker,buildBucket:buildBucket,buildFrame:buildFrame,buildEasel:buildEasel,buildBookTable:buildBookTable,buildBookTable3:buildBookTable3,buildCA:buildCA,buildCert:buildCert,buildHashMachine:buildHashMachine,buildHashTag:buildHashTag};
 
 var all={}, k; for(k in PROPS_LIST) all[k]=PROPS_LIST[k]; for(k in KPROPS_LIST) all[k]=KPROPS_LIST[k]; for(k in TPROPS_LIST) all[k]=TPROPS_LIST[k];
 return all;
@@ -5517,6 +5548,14 @@ function build(scene){
   W.cr6=mk("buildCrate",4.5,2.5,0.6,0,0.85); F3.add(W.cr6); ST.merge(W.cr6);
   [1,2,3].forEach(function(k){ W.door[k].concat(W.pad[k]).forEach(function(o){ WALLS.push({o:o,side:"back",s:k}); }); });
   [W.fr1,W.clock,W.post].forEach(function(o){ WALLS.push({o:o,side:"back"}); }); WALLS.push({o:W.fr3,side:"side",x:CX+RW/2});
+  /* 第3の かざり（2026-10-23 ユーザー指定：このステージでは 使わない。時計の 時刻と 本の 数は 第2と ちがう） */
+  W.clock3=mk("buildClock",-1.6,BACK+0.09,0,1.55); F3.add(W.clock3); ST.merge(W.clock3);
+  W.clock3.userData.hour.rotation.z=-((5+40/60)/12)*Math.PI*2; W.clock3.userData.min.rotation.z=-(40/60)*Math.PI*2;   /* 5時40分 */
+  W.books3=mk("buildBookTable3",-0.5,1.9,0.12); F3.add(W.books3); ST.merge(W.books3);
+  W.km3=mk("buildKeyMaker",-3.8,BACK+0.38,0); F3.add(W.km3);
+  ST.sign(W.km3.userData.sign,0.66,0.11,"鍵づくりの機械","#ffffff","#2f556e");
+  paint(W.km3.userData.screen,0.58,0.2,padDraw("おやすみ中",false,"#8b97a8")); ST.merge(W.km3);
+  WALLS.push({o:W.clock3,side:"back"});   /* 奥の 壁の 時計（回したとき 壁と いっしょに 消す） */
   W.cage=mk("buildCage",0,0,0); W.cage.visible=false;   /* はずれの 扉の わな：上から 落ちてくる ろうや（世界の 座標） */
   /* 管・口・受け取り台 */
   var glass=new THREE.Mesh(new THREE.CylinderGeometry(0.26,0.26,MOUTH_R-MOUTH_M,24,1,true),new THREE.MeshLambertMaterial({color:0xbfe3ff,transparent:true,opacity:0.3,depthWrite:false,side:THREE.DoubleSide}));
@@ -5580,7 +5619,7 @@ var CELL=0.2, X0=CX-RW/2, X1=CX+RW/2, Z0=-HD, Z1=HD, NX=Math.round((X1-X0)/CELL)
 /* 家具の当たり（部屋の中の座標。free で +CX） */
 var FURN={1:[[-0.1,1.3,-3.4,-2.95],[3.6,4.2,0.65,1.2],[-1.8,-1.2,2.0,2.6],[4.2,4.8,2.3,2.9]],
           2:[[-1.98,-1.02,-3.4,-2.7],[1.4,2.8,1.7,2.3],[4.25,4.75,2.45,2.95]],
-          3:[[-4.1,-3.5,2.2,2.8],[4.25,4.75,2.25,2.75]]};
+          3:[[-4.1,-3.5,2.2,2.8],[4.25,4.75,2.25,2.75],[-4.28,-3.32,-3.4,-2.7],[-1.2,0.2,1.6,2.2]]};   /* 鍵づくりの機械・本の台（2026-10-23） */
 var TRAYR=[-2.6,-1.95,-1.7,-0.7];
 /* ペンギンの はじめの位置（どのステージも 家具に かからない所。2026-10-22：木箱の当たりの中から始まって 動けなかったのを直した） */
 var START=[-1.1,0.3];
@@ -5905,6 +5944,10 @@ function makeHotspots(){
   /* 第3 */
   hs("post",{stage:3,name:"はり紙",stand:[1.0,-2.75],local:1,obj:W.post,fn:function(){ readPaper("📋 はり紙",postHTML()); }});
   hs("cr5",{stage:3,name:"木箱",stand:[-3.1,1.9],local:1,obj:W.cr5,fn:function(){ say("からっぽの 木箱だ。"); }});
+  /* 第3の かざり：調べられるが 使わない */
+  hs("clock3",{stage:3,name:"かべの 時計",stand:[-1.6,-2.75],local:1,obj:W.clock3,fn:function(){ say("かべの 時計。<b>5時40分</b>を さしている。…この部屋では 関係 なさそう。"); }});
+  hs("books3",{stage:3,name:"本の 山",stands:[[-0.5,1.2],[-0.5,2.65],[-1.6,1.9],[0.6,1.9]],local:1,obj:W.books3,fn:function(){ say("色ごとに 本が つんである。<b style='color:#c4383d'>赤</b> 2さつ、<b style='color:#1d4ea6'>青</b> 6さつ、<b style='color:#b8860b'>黄</b> 3さつ。…前の 部屋とは ちがう。"); }});
+  hs("km3",{stage:3,name:"鍵づくりの 機械",stands:[[-2.5,-2.25],[-5.0,-2.25]],nearPts:[[-3.8,-2.2]],local:1,obj:W.km3,fn:function(){ say("鍵づくりの 機械。鍵の ペアは もう 持っているから、使わなくて よさそう。"); }});
   DOORS3.forEach(function(x,k){   /* 2026-10-23：扉 3つ */
     hs("pad3"+k,{stage:3,name:(DOORS3.length>1?NAMES3[k]+"の":"")+"扉の 文字錠",stand:[x+0.7,-2.75],local:1,obj:W.pad[3][k],fn:function(){ exKana(3,k); },spark:function(){ return !G.f.open3; }});
     hs("door3"+k,{stage:3,name:(DOORS3.length>1?NAMES3[k]+"の":"")+"扉",stand:[x,-2.75],local:1,obj:W.door[3][k],fn:function(){ say("鍵が かかっている。横に 文字錠。"); }});
