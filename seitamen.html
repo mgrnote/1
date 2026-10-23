@@ -65,8 +65,23 @@ button{font:inherit;color:inherit;cursor:pointer}
 #tools2 button:disabled{opacity:.45;cursor:default}
 body[data-view="count"] #tools2,body[data-view="count"] #vtitle{display:none}
 body:not([data-view="count"]) #modes,body:not([data-view="count"]) #counter,body:not([data-view="count"]) #tools{display:none}
-body[data-view="net"] #bRoll,body[data-view="net"] #bBlow,body[data-view="net"] #bCam,body[data-view="dice"] #bFold{display:none}
-body[data-view="dice"] #stage{background:#f3eee4}
+#tools2 [data-for]{display:none}
+body[data-view="net"] #tools2 [data-for="net"],body[data-view="dice"] #tools2 [data-for="room"],body[data-view="uranai"] #tools2 [data-for="room"],body[data-view="cut"] #tools2 [data-for="cut"]{display:inline-block}
+body[data-view="dice"] #stage,body[data-view="uranai"] #stage{background:#f3eee4}
+#dres.txt .cnum{font-size:38px;padding:8px 0 6px}
+.cutbtn{padding:7px 10px;border:2px solid #ffc078;border-radius:10px;background:#fff4e6;color:#d9480f;font-size:13px;font-weight:700;text-align:left;transition:transform .12s,background .2s,color .2s}
+.cutbtn:active{transform:scale(.97)}
+.cutbtn:disabled{opacity:.45;cursor:default}
+.cutbtn[aria-pressed="true"]{background:#fd7e14;border-color:#fd7e14;color:#fff}
+#ucard{position:absolute;right:14px;top:62px;width:min(300px,calc(100% - 28px));max-height:calc(100% - 140px);overflow:auto;background:#fffdf8;border:3px solid #e03131;border-radius:16px;padding:12px 14px;box-shadow:0 8px 24px rgba(30,50,70,.22)}
+#ucard .uc-top{display:flex;align-items:baseline;gap:10px;border-bottom:1px dashed #e9c6c6;padding-bottom:6px;margin-bottom:6px}
+#ucard .uc-top span{font-size:14px;color:var(--sub);font-weight:700}
+#ucard .uc-top b{font-size:34px}
+#ucMsg{margin:4px 0 8px;font-size:15px;font-weight:700;line-height:1.5}
+#ucard dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:14px;line-height:1.45}
+#ucard dt{color:#c92a2a;font-weight:800;white-space:nowrap}
+#ucard dd{margin:0}
+#ucClose{position:absolute;top:4px;right:8px;border:0;background:transparent;font-size:22px;color:var(--sub)}
 
 #stamp{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:#fff;border:4px solid var(--accent);border-radius:18px;padding:16px 30px;text-align:center;width:max-content;max-width:92%;box-shadow:0 10px 30px rgba(30,50,70,.25);pointer-events:none}
 #stamp .s1{font-size:34px;font-weight:800}
@@ -109,6 +124,7 @@ body[data-view="dice"] #stage{background:#f3eee4}
   <div id="views" aria-label="モード">
     <button id="bNet" type="button" aria-pressed="false">展開図</button>
     <button id="bDice" type="button" aria-pressed="false">さいころで転がす</button>
+    <button id="bUranai" type="button" aria-pressed="false">占い</button>
   </div>
 </header>
 <div id="app">
@@ -129,11 +145,25 @@ body[data-view="dice"] #stage{background:#f3eee4}
     <div id="vtitle"></div>
     <div id="dres" hidden><div class="clabel" id="dlabel">出た目</div><div class="cnum" id="dnum">-</div></div>
     <div id="tools2">
-      <button id="bFold" type="button">とじる</button>
-      <button id="bRoll" type="button" class="go">ペンギンに投げてもらう</button>
-      <button id="bBlow" type="button" class="blast">吹っ飛ばす</button>
-      <button id="bCam" type="button">カメラを戻す</button>
+      <button id="bFold" type="button" data-for="net">とじる</button>
+      <button id="bRoll" type="button" class="go" data-for="room">ペンギンに投げてもらう</button>
+      <button id="bBlow" type="button" class="blast" data-for="room">吹っ飛ばす</button>
+      <button id="bCam" type="button" data-for="room">カメラを戻す</button>
+      <button id="bCutAgain" type="button" class="go" data-for="cut">もう一度見る</button>
       <button id="bBack" type="button">数えるにもどる</button>
+    </div>
+    <div id="ucard" hidden>
+      <button id="ucClose" type="button" aria-label="とじる">×</button>
+      <div class="uc-top"><span>今日の運勢</span><b id="ucRank"></b></div>
+      <p id="ucMsg"></p>
+      <dl>
+        <dt>勉強</dt><dd id="ucStudy"></dd>
+        <dt>友だち</dt><dd id="ucFriend"></dd>
+        <dt>体</dt><dd id="ucHealth"></dd>
+        <dt>ラッキーアイテム</dt><dd id="ucItem"></dd>
+        <dt>ラッキーナンバー</dt><dd id="ucNum"></dd>
+        <dt>ラッキー立体</dt><dd id="ucShape"></dd>
+      </dl>
     </div>
     <div id="stamp" hidden><div class="s1" id="s1"></div><div class="s2" id="s2"></div></div>
   </main>
@@ -413,6 +443,17 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     b.innerHTML = `<span class="nm">${p.name}</span>${p.sub ? `<span class="sb">${p.sub}</span>` : ""}<span class="dots"><i class="f"></i><i class="v"></i><i class="e"></i></span>`;
     b.addEventListener("click", () => selectPoly(p.id));
     polysEl.appendChild(b);
+    if (p.id === "cubocta") {
+      const c = document.createElement("button");
+      c.type = "button"; c.id = "bCut"; c.className = "cutbtn"; c.setAttribute("aria-pressed", "false");
+      c.textContent = "▶ 立方体の角を切り取って作る";
+      c.addEventListener("click", () => {
+        if (view === "cut") return setView("cut"); // もう一度押すと数えるにもどる
+        if (cur.def.id !== "cubocta") selectPoly("cubocta");
+        setView("cut");
+      });
+      polysEl.appendChild(c);
+    }
   });
   MODES.forEach((m) => {
     const b = document.createElement("button");
@@ -426,6 +467,10 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     if (cur && cur.def.id === id) return;
     if (D.busy) return; // ペンギンが転がしている間は替えない
     if (cur) { cur.group.visible = false; if (cur.net) cur.net.wrap.visible = false; }
+    if (view === "cut") { // 角を切るアニメの途中でほかの立体を選んだら、数えるにもどる
+      CUT.group.visible = false; view = "count"; document.body.dataset.view = "count";
+      $("bCut").setAttribute("aria-pressed", "false"); $("stamp").hidden = true;
+    }
     cur = built[id] || (built[id] = buildPoly(POLYS.find((p) => p.id === id)));
     cur.group.visible = view === "count";
     hover = null;
@@ -437,7 +482,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     applySkel();
     refreshUI();
     if (view === "net") enterNet();
-    else if (view === "dice") enterDice();
+    else if (room()) enterDice();
   }
 
   function setMode(m) {
@@ -611,7 +656,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
   canvas.addEventListener("pointermove", (e) => {
     const p = ptrs.get(e.pointerId);
     if (!p) {
-      if (e.pointerType === "mouse" && view !== "dice") { hover = pick(e); canvas.style.cursor = hover ? "pointer" : "grab"; }
+      if (e.pointerType === "mouse" && !room()) { hover = pick(e); canvas.style.cursor = hover ? "pointer" : "grab"; }
       return;
     }
     const dx = e.clientX - p.x, dy = e.clientY - p.y;
@@ -622,7 +667,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
       return;
     }
     if (downAt && Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y) > 6) moved = true;
-    if (view === "dice") { // 部屋はカメラを回す（ドラッグ）。動かさずに離せば転がす
+    if (room()) { // 部屋はカメラを回す（ドラッグ）。動かさずに離せば転がす
       if (moved) { orbitRoom(dx, dy); canvas.style.cursor = "grabbing"; }
       return;
     }
@@ -632,7 +677,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     if (!ptrs.has(e.pointerId)) return;
     ptrs.delete(e.pointerId);
     if (ptrs.size === 0) {
-      if (!moved && view === "dice") roll("toss");
+      if (!moved && room()) roll("toss");
       else if (!moved) { const it = pick(e); if (it) toggle(it); vel.set(0, 0, 0, 1); }
       else if (performance.now() - lastMove > 80) vel.set(0, 0, 0, 1); // 止めてから離したら惰性なし
       downAt = null;
@@ -688,7 +733,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
       if (p >= 1) anims.splice(i, 1);
       a.fn(Math.min(1, p));
     }
-    if (view === "dice") {
+    if (room()) {
       if (!(D.heroIdle && !D.busy && keyWalk(dt, now)) && D.heroIdle) HERO.animIdle(D.hero, now / 1000);
       if (D.sim) D.sim(dt);
       fitRoomCam(dt);
@@ -696,6 +741,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
       return;
     }
     if (view === "net") updateNet(dt);
+    if (view === "cut") updateCut(now);
     if (!ptrs.size) {
       if (spin && !reduce) root.quaternion.premultiply(SPIN);
       vel.slerp(ID, 0.08); // 惰性はすぐ止まる
@@ -713,20 +759,27 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     if (D.busy) return;
     if (v === view) v = "count"; // もう一度押すと数えるにもどる
     if (cur.net) cur.net.wrap.visible = false;
+    if (CUT.group) CUT.group.visible = false;
     view = v;
     document.body.dataset.view = v;
     $("bNet").setAttribute("aria-pressed", v === "net");
     $("bDice").setAttribute("aria-pressed", v === "dice");
+    $("bUranai").setAttribute("aria-pressed", v === "uranai");
+    $("bCut").setAttribute("aria-pressed", v === "cut");
     $("stamp").hidden = true;
-    $("dres").hidden = v !== "dice";
+    $("ucard").hidden = true;
+    $("dres").hidden = !room();
     hover = null;
     if (v === "count") { cur.group.visible = true; goHome(); setMode(mode); }
     else if (v === "net") enterNet();
+    else if (v === "cut") enterCut();
     else enterDice();
     canvas.style.cursor = "grab";
   }
   $("bNet").addEventListener("click", () => setView("net"));
   $("bDice").addEventListener("click", () => setView("dice"));
+  $("bUranai").addEventListener("click", () => setView("uranai"));
+  const room = () => view === "dice" || view === "uranai"; // ペンギンの部屋を使うモード
   $("bBack").addEventListener("click", () => setView(view));
   $("bFold").addEventListener("click", () => {
     const N = cur.net;
@@ -759,6 +812,184 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     out.multiply(_rm.makeRotationAxis(axis, ang));
     return out.multiply(_tm.makeTranslation(-A.x, -A.y, -A.z));
   }
+
+  // ---------- 占い（さいころの面に運勢） ----------
+  const FORTUNE = {
+    大吉: { c: "#d6336c",
+      msg: ["何をやってもうまくいく最高の一日。思いきって挑戦しよう", "今日のきみは無敵。後回しにしていたことを片づけるチャンス"],
+      study: ["ひらめきがさえる日。むずかしい問題ほど解けそう", "授業で手をあげると、いいことが起きる"],
+      friend: ["話しかけた相手と、思った以上に気が合う", "友だちの一言で一日中ごきげん"],
+      health: ["体が軽い。階段を一段とばしで上れそう", "ぐっすり眠れて、頭がすっきり"] },
+    中吉: { c: "#e8590c",
+      msg: ["いい流れが来ている。小さな目標を1つ決めると運が育つ", "うれしいことが少しずつ重なる日"],
+      study: ["コツコツ型の勉強が実を結ぶ。昨日の復習から始めよう", "図を描いて考えると、すっと分かる"],
+      friend: ["困っている人を手伝うと、あとで自分が助けられる", "久しぶりの人から声をかけられそう"],
+      health: ["朝ごはんをしっかり食べると調子が上がる", "軽く体を動かすと気分が晴れる"] },
+    小吉: { c: "#f08c00",
+      msg: ["ささやかな幸せが見つかる日。足もとをよく見て", "あせらずいけば、ちょっといいことがある"],
+      study: ["ノートをていねいに書くと、テスト前の自分を助けてくれる", "計算は見直しを1回。それで点が守れる"],
+      friend: ["聞き役に回ると、信頼がぐっと上がる", "あいさつを自分から。それだけで運が上向く"],
+      health: ["水をこまめに飲むとよい", "寝る前のスマホを10分短くしてみて"] },
+    吉: { c: "#2b8a3e",
+      msg: ["いつもどおりが一番の日。リズムを守ればうまくいく", "安定運。やるべきことを順番に片づけよう"],
+      study: ["基本問題をくり返すと力がつく", "分からないところを1つ質問すると、すっきりする"],
+      friend: ["いつものメンバーと笑える時間がある", "約束の時間を守ると、評価が上がる"],
+      health: ["よく歩くと運気アップ", "姿勢を正すと集中力が続く"] },
+    末吉: { c: "#1c7ed6",
+      msg: ["今はつぼみの時期。あとから運がひらいてくる", "スタートはゆっくりでも、夕方にかけて調子が上がる"],
+      study: ["今日の努力は、少しあとで効いてくる", "まちがえた問題こそ宝物。解き直しておこう"],
+      friend: ["すぐに返事が来なくても気にしないで", "ちょっとした親切が、あとで返ってくる"],
+      health: ["早めに寝ると、明日の運が上がる", "肩をぐるぐる回してリフレッシュ"] },
+    ふつう: { c: "#5d6b78",
+      msg: ["可もなく不可もなく。ふつうの日を大事にしよう", "大きな波はない日。自分のペースでいこう"],
+      study: ["決めた時間だけ集中すれば十分", "得意な科目から始めると調子が出る"],
+      friend: ["いつもどおりの会話に、小さな発見がある", "無理に合わせなくても大丈夫"],
+      health: ["好きな音楽で気分転換", "おやつは少なめがちょうどいい"] },
+    凶: { c: "#495057",
+      msg: ["ちょっとつまずきやすい日。でも気をつければ大丈夫", "うっかりに注意。持ち物を出かける前に確かめよう"],
+      study: ["問題文を最後まで読もう。読み落としが一番の敵", "符号ミスに注意。マイナスを見落とさないで"],
+      friend: ["言い方ひとつで誤解されやすい。やさしい言葉を選んで", "人の話を最後まで聞くと、トラブルを防げる"],
+      health: ["夜ふかしは禁物", "あたたかい飲み物で体を休めて"] },
+    大凶: { c: "#7048e8",
+      msg: ["今日は運の底。ここから先は上がるだけ！", "大凶が出るのはむしろレア。話のネタにしよう"],
+      study: ["今日まちがえたところは、本番ではもうまちがえない", "1問だけでいいから解き直そう。運が反転する"],
+      friend: ["笑い話にすれば、みんなが味方になる", "だれかに「ありがとう」を言うと流れが変わる"],
+      health: ["今日は早く寝るのがいちばんの開運法", "深呼吸を3回。気持ちがリセットされる"] },
+  };
+  const FORTUNE_SET = { // 面の数ごとの運勢の配分（多い面ほど「吉」寄り）
+    4: ["大吉", "吉", "ふつう", "凶"],
+    6: ["大吉", "中吉", "小吉", "吉", "末吉", "凶"],
+    8: ["大吉", "中吉", "小吉", "吉", "末吉", "ふつう", "凶", "大凶"],
+    12: ["大吉", "中吉", "中吉", "小吉", "小吉", "吉", "吉", "末吉", "末吉", "ふつう", "凶", "大凶"],
+    14: ["大吉", "大吉", "中吉", "中吉", "小吉", "小吉", "吉", "吉", "末吉", "末吉", "ふつう", "ふつう", "凶", "大凶"],
+    20: ["大吉", "大吉", "中吉", "中吉", "中吉", "小吉", "小吉", "小吉", "吉", "吉", "吉", "吉", "末吉", "末吉", "末吉", "ふつう", "ふつう", "凶", "凶", "大凶"],
+  };
+  const LUCKY = ["コンパス", "三角定規", "分度器", "さいころ", "サッカーボール", "方眼ノート", "赤ペン", "消しゴム", "ルービックキューブ", "三角おにぎり"];
+  const pickOne = (a) => a[Math.floor(Math.random() * a.length)];
+  function dieFortunes(P) { return shuffle(FORTUNE_SET[P.faces.length].slice(), rng(P.faces.length * 7 + 3)); }
+  const fortuneTexCache = {};
+  function fortuneTex(text) {
+    if (fortuneTexCache[text]) return fortuneTexCache[text];
+    const S = 128, cv = document.createElement("canvas");
+    cv.width = cv.height = S;
+    const g = cv.getContext("2d");
+    g.fillStyle = FORTUNE[text].c;
+    g.font = `800 ${text.length >= 3 ? 38 : text.length === 2 ? 52 : 76}px "BIZ UDPGothic","Hiragino Sans",Meiryo,sans-serif`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(text, S / 2, S / 2 + 3);
+    const img = g.getImageData(0, 0, S, S).data, data = new Uint8Array(S * S * 4), row = S * 4;
+    for (let y = 0; y < S; y++) data.set(img.subarray((S - 1 - y) * row, (S - y) * row), y * row);
+    const t = new THREE.DataTexture(data, S, S, THREE.RGBAFormat);
+    t.magFilter = t.minFilter = THREE.LinearFilter;
+    t.generateMipmaps = false;
+    t.needsUpdate = true;
+    return (fortuneTexCache[text] = t);
+  }
+  function showFortune(rank) {
+    const F = FORTUNE[rank];
+    $("ucRank").textContent = rank;
+    $("ucRank").style.color = F.c;
+    $("ucMsg").textContent = pickOne(F.msg);
+    $("ucStudy").textContent = pickOne(F.study);
+    $("ucFriend").textContent = pickOne(F.friend);
+    $("ucHealth").textContent = pickOne(F.health);
+    $("ucItem").textContent = pickOne(LUCKY);
+    $("ucNum").textContent = 1 + Math.floor(Math.random() * 20);
+    $("ucShape").textContent = pickOne(POLYS.slice(0, 5)).name;
+    const c = $("ucard");
+    c.style.borderColor = F.c;
+    c.hidden = false;
+    if (!reduce) c.animate([{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }], { duration: 500, delay: 350, easing: "cubic-bezier(.16,1,.3,1)", fill: "backwards" });
+  }
+  $("ucClose").addEventListener("click", () => { $("ucard").hidden = true; });
+
+  // ---------- 問6: 立方体の8つの角を切り取って作るアニメ ----------
+  const CUT = { group: null, t0: 0, done: false };
+  const CUT_ORANGE = new THREE.Color(0xffa94d), CUT_RED = new THREE.Color(0xe03131);
+  function rod(parent, A, B, mat, r) {
+    const d = B.clone().sub(A), m = new THREE.Mesh(unitCyl, mat);
+    m.position.copy(A).add(B).multiplyScalar(0.5);
+    m.quaternion.setFromUnitVectors(Y, d.clone().normalize());
+    m.scale.set(r, d.length(), r);
+    parent.add(m);
+    return m;
+  }
+  function triGeo(pts) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pts.flatMap((p) => [p.x, p.y, p.z]), 3));
+    geo.computeVertexNormals();
+    return geo;
+  }
+  function buildCut() {
+    const s = R / Math.SQRT2, g = new THREE.Group();
+    const V = cycSigns([1, 1, 0]).map((p) => new THREE.Vector3(...p).multiplyScalar(s));
+    const tris = [];
+    const sqMat = new THREE.MeshLambertMaterial({ color: FACE_BASE, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    hullFaces(V).forEach((f) => { // 残る立体（問6の多面体）
+      const pts = [];
+      for (let t = 1; t < f.idx.length - 1; t++) pts.push(V[f.idx[0]], V[f.idx[t]], V[f.idx[t + 1]]);
+      const mat = f.idx.length === 3 ? sqMat.clone() : sqMat;
+      const m = new THREE.Mesh(triGeo(pts), mat);
+      g.add(m);
+      if (f.idx.length === 3) tris.push({ mat, n: f.normal.clone() });
+    });
+    const redMat = new THREE.MeshLambertMaterial({ color: CUT_RED.clone(), transparent: true, opacity: 0 });
+    const lines = new THREE.Group(); // 切り口の線 = 残る立体の辺
+    const seen = new Set();
+    hullFaces(V).forEach((f) => f.idx.forEach((a, i) => {
+      const b = f.idx[(i + 1) % f.idx.length], k = Math.min(a, b) + "-" + Math.max(a, b);
+      if (!seen.has(k)) { seen.add(k); rod(lines, V[a], V[b], redMat, 0.014); }
+    }));
+    g.add(lines);
+    const pyr = signs([1, 1, 1]).map((c) => { // 切り取る8つの角（三角すい）
+      const C = new THREE.Vector3(...c).multiplyScalar(s), M = [new THREE.Vector3(0, c[1], c[2]), new THREE.Vector3(c[0], 0, c[2]), new THREE.Vector3(c[0], c[1], 0)].map((v) => v.multiplyScalar(s));
+      const mat = new THREE.MeshLambertMaterial({ color: FACE_BASE, side: THREE.DoubleSide, transparent: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+      const mesh = new THREE.Mesh(triGeo([C, M[0], M[1], C, M[1], M[2], C, M[2], M[0], M[0], M[1], M[2]]), mat);
+      const edgeMat = new THREE.MeshLambertMaterial({ color: LINE_BASE, transparent: true });
+      M.forEach((m) => rod(mesh, C, m, edgeMat, 0.012));
+      g.add(mesh);
+      const dir = C.clone().normalize();
+      return { mesh, mat, edgeMat, dir, tri: tris.reduce((b, t) => (t.n.dot(dir) > b.n.dot(dir) ? t : b)) };
+    });
+    // 上の4つ → 下の4つの順に切る
+    pyr.sort((a, b) => b.dir.y - a.dir.y || Math.atan2(a.dir.z, a.dir.x) - Math.atan2(b.dir.z, b.dir.x));
+    g.visible = false;
+    root.add(g);
+    return Object.assign(CUT, { group: g, pyr, redMat, lines });
+  }
+  const CUT_START = 1200, CUT_GAP = 350, CUT_DUR = 800, CUT_END = CUT_START + 7 * CUT_GAP + CUT_DUR;
+  function updateCut(now) {
+    const t = reduce ? 1e9 : now - CUT.t0;
+    const kl = clamp01((t - 400) / 500); // 切り口の線があらわれる
+    CUT.redMat.opacity = kl;
+    CUT.lines.visible = kl > 0;
+    CUT.pyr.forEach((p, i) => {
+      const st = CUT_START + i * CUT_GAP, k = clamp01((t - st) / CUT_DUR);
+      p.mesh.position.copy(p.dir).multiplyScalar(1.1 * ease.inOut(k)); // 角が外へはなれていく
+      const op = 1 - clamp01((k - 0.35) / 0.65);
+      p.mat.opacity = op; p.edgeMat.opacity = op;
+      p.mat.depthWrite = op > 0.99;
+      p.mesh.visible = k < 1;
+      const fl = t < st ? 0 : Math.max(0, 1 - Math.max(0, t - st - 500) / 900); // 切り口の三角形が光る
+      p.tri.mat.color.copy(FACE_BASE).lerp(CUT_ORANGE, fl);
+    });
+    CUT.redMat.color.copy(CUT_RED).lerp(LINE_BASE, clamp01((t - CUT_END) / 500));
+    if (t >= CUT_END + 500 && !CUT.done) {
+      CUT.done = true;
+      showStamp("問6の多面体のできあがり", "立方体の8つの角を切り取った形", 2600);
+    }
+  }
+  function enterCut() {
+    if (!CUT.group) buildCut();
+    cur.group.visible = false;
+    CUT.group.visible = true;
+    spin = false; $("bSpin").setAttribute("aria-pressed", "false");
+    vel.set(0, 0, 0, 1); zoom = 1;
+    root.quaternion.copy(HOME);
+    CUT.t0 = performance.now(); CUT.done = false;
+    $("vtitle").textContent = "立方体の8つの角を切り取る";
+  }
+  $("bCutAgain").addEventListener("click", () => { CUT.t0 = performance.now(); CUT.done = false; $("stamp").hidden = true; });
 
   // ---------- 展開図 ----------
   // 面のつながりから木をいくつも作り、重ならず、いちばんまとまったものを採る
@@ -909,6 +1140,8 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     rug2.scale.set(4.4, 2.7, 1);
     add(new THREE.PlaneGeometry(16, 5), 0xf8f3ea, 0, 2.5, -4.6);                 // 奥の壁
     add(new THREE.PlaneGeometry(10, 5), 0xf1ebdf, -7.5, 2.5, 0.4, 0, Math.PI / 2); // 左の壁
+    add(new THREE.PlaneGeometry(10, 5), 0xf1ebdf, 7.5, 2.5, 0.4, 0, -Math.PI / 2); // 右の壁
+    add(new THREE.PlaneGeometry(16, 5), 0xf8f3ea, 0, 2.5, 4.8, 0, Math.PI);       // 手前の壁（外のカメラからは見えない）
     add(new THREE.BoxGeometry(16, 0.3, 0.06), 0xb38d5f, 0, 0.15, -4.57);
     add(new THREE.BoxGeometry(2.6, 1.8, 0.08), 0xffffff, 1.6, 2.6, -4.56);      // 窓
     add(new THREE.BoxGeometry(2.3, 1.5, 0.09), 0xbfe3f7, 1.6, 2.6, -4.55);
@@ -980,8 +1213,8 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     } else P.faces.forEach((_, i) => { nums[i] = i + 1; });
     return nums;
   }
-  function buildDie(P) {
-    const g = new THREE.Group(), F = P.faces.length, nums = dieNumbers(P), edgeMat = lam(0x7b8794);
+  function buildDie(P, fortune) {
+    const g = new THREE.Group(), F = P.faces.length, nums = fortune ? dieFortunes(P) : dieNumbers(P), edgeMat = lam(0x7b8794);
     const faceMats = P.faces.map((fc, f) => {
       const mat = new THREE.MeshLambertMaterial({ color: 0xfffaf0, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
       const m = new THREE.Mesh(P.items.face[f].mesh.geometry, mat);
@@ -992,7 +1225,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
         const A = P.V[a], ab = P.V[fc.idx[(i + 1) % fc.idx.length]].clone().sub(A).normalize(), ac = fc.center.clone().sub(A);
         inr = Math.min(inr, ac.sub(ab.multiplyScalar(ac.dot(ab))).length());
       });
-      const dm = new THREE.Mesh(new THREE.PlaneGeometry(inr * 1.45, inr * 1.45), new THREE.MeshBasicMaterial({ map: dieTex(nums[f], F >= 9), transparent: true, depthWrite: false }));
+      const dm = new THREE.Mesh(new THREE.PlaneGeometry(inr * 1.45, inr * 1.45), new THREE.MeshBasicMaterial({ map: fortune ? fortuneTex(nums[f]) : dieTex(nums[f], F >= 9), transparent: true, depthWrite: false }));
       dm.position.copy(fc.center).addScaledVector(fc.normal, 0.004);
       dm.quaternion.setFromUnitVectors(ZV, fc.normal);
       g.add(dm);
@@ -1017,7 +1250,8 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
   function enterDice() {
     initRoom();
     if (D.die) D.scene.remove(D.die.group);
-    D.die = cur.die || (cur.die = buildDie(cur));
+    const uranai = view === "uranai", key = uranai ? "dieU" : "die";
+    D.die = cur[key] || (cur[key] = buildDie(cur, uranai));
     D.die.faceMats.forEach((m) => m.color.setHex(0xfffaf0));
     D.scene.add(D.die.group);
     D.q.setFromUnitVectors(cur.faces[0].normal, DOWN);
@@ -1029,7 +1263,9 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     D.heroIdle = true;
     $("dnum").textContent = "-";
     $("bRoll").disabled = false;
-    $("vtitle").innerHTML = `${cur.def.name}のさいころ <small>方向キーでペンギンが歩く</small>`;
+    $("vtitle").innerHTML = `${cur.def.name}${uranai ? "で占う" : "のさいころ"} <small>方向キーでペンギンが歩く</small>`;
+    $("dlabel").textContent = uranai ? "運勢" : "出た目";
+    $("dres").classList.toggle("txt", uranai);
   }
   // さいころの物理: 重力・床と壁ではね返る・まさつで転がる。
   // 正多面体（と問6の立体）は慣性がどの向きにも同じなので、慣性モーメントは数1つ（球に近い 0.4 m r²）でよい
@@ -1039,6 +1275,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     { n: new THREE.Vector3(-1, 0, 0), d: 7.45, e: 0.6 },  // 右の壁
     { n: new THREE.Vector3(0, 0, 1), d: 4.55, e: 0.6 },   // 奥の壁
     { n: new THREE.Vector3(0, 0, -1), d: 4.75, e: 0.6 },  // 手前の壁
+    { n: new THREE.Vector3(0, -1, 0), d: 5, e: 0.6 },     // 天井（見えない）
   ];
   const _pw = new THREE.Vector3(), _r = new THREE.Vector3(), _vp = new THREE.Vector3(), _rn = new THREE.Vector3(), _t3 = new THREE.Vector3(), _dq = new THREE.Quaternion();
   function throwDie(v, w) {
@@ -1062,7 +1299,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
             _vp.copy(w).cross(_r).add(v);
             const vn = _vp.dot(pl.n);
             if (vn >= 0) continue;
-            if (vn < -3) D.shake = Math.min(0.22, Math.max(D.shake, -vn * 0.012)); // 強くぶつかったら画面がゆれる
+            if (vn < -3) D.shake = Math.min(0.35, Math.max(D.shake, -vn * 0.012)); // 強くぶつかったら画面がゆれる
             _rn.copy(_r).cross(pl.n);
             const j = (-(1 + (vn > -0.8 ? 0 : pl.e)) * vn) / (1 + _rn.lengthSq() / I);
             v.addScaledVector(pl.n, j);
@@ -1084,7 +1321,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
         applyDie();
         time += dt;
         still = contact && v.length() < 0.12 && w.length() < 0.4 ? still + dt : 0;
-        if (still > 250 || time > 9000) { D.sim = null; settle().then(res); }
+        if (still > 250 || time > 14000) { D.sim = null; settle().then(res); }
       };
       if (reduce) while (D.sim) D.sim(16);
     });
@@ -1097,7 +1334,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
   const WALK = 3.6; // 歩く速さ（m/秒）。最初の 1.8 は遅かった
   const keys = new Set(), KEYS = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
   addEventListener("keydown", (e) => {
-    if (view !== "dice" || !KEYS.includes(e.key)) return;
+    if (!room() || !KEYS.includes(e.key)) return;
     e.preventDefault(); // ページがスクロールしないように
     keys.add(e.key);
   });
@@ -1140,11 +1377,12 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     P.bob(0); P.waddle(0); P.flap(0);
   }
   async function roll(kind) {
-    if (D.busy || view !== "dice") return;
+    if (D.busy || !room()) return;
     const blast = kind === "blast";
     D.busy = true;
-    ["bRoll", "bBlow", "bBack", "bNet", "bDice"].forEach((id) => { $(id).disabled = true; });
+    ["bRoll", "bBlow", "bBack", "bNet", "bDice", "bUranai", "bCut"].forEach((id) => { $(id).disabled = true; });
     $("stamp").hidden = true;
+    $("ucard").hidden = true;
     $("dnum").textContent = "…";
     D.die.faceMats.forEach((m) => m.color.setHex(0xfffaf0));
     const P = D.hero;
@@ -1188,9 +1426,9 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     const rnd = Math.random, side = new THREE.Vector3(-dir.z, 0, dir.x), spinAx = new THREE.Vector3(0, 1, 0).cross(dir); // 前に転がる向きの回転軸
     const wild = new THREE.Vector3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize();
     const v0 = blast
-      ? dir.clone().multiplyScalar(10 + 3 * rnd()).addScaledVector(side, (rnd() - 0.5) * 4).setY(5 + 2 * rnd())
+      ? dir.clone().multiplyScalar(50 + 15 * rnd()).addScaledVector(side, (rnd() - 0.5) * 20).setY(15 + 6 * rnd()) // はじめの5倍（たては天井ではね返る）
       : dir.clone().multiplyScalar(2.6 + 1.2 * rnd()).addScaledVector(side, (rnd() - 0.5) * 0.8).setY(4 + 1.2 * rnd());
-    const w0 = spinAx.multiplyScalar(blast ? 14 + 8 * rnd() : 6 + 4 * rnd()).addScaledVector(wild, blast ? 14 : 3);
+    const w0 = spinAx.multiplyScalar(blast ? 70 + 40 * rnd() : 6 + 4 * rnd()).addScaledVector(wild, blast ? 70 : 3);
     const flying = throwDie(v0, w0);
     await push;
     await tween(420, (t) => { const k = ease.inOut(t); P.lean((blast ? 0.7 : 0.4) * (1 - k)); P.flap((blast ? 1.3 : 1.2) * (1 - k)); });
@@ -1202,7 +1440,10 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     if (!tetra) D.die.faceMats[f].color.setHex(0xffe58a);
     $("dnum").textContent = num;
     if (!reduce) $("dnum").animate([{ transform: "scale(1.5)", opacity: 0 }, { transform: "none", opacity: 1 }], { duration: 420, easing: "cubic-bezier(.34,1.56,.64,1)" });
-    showStamp(`出た目は <b style="color:var(--accent)">${num}</b>`, tetra ? "正四面体は、床についた面の数を読みます" : "いちばん上の面の数を読みます", 2200);
+    if (view === "uranai") {
+      showStamp(`今日の運勢は <b style="color:${FORTUNE[num].c}">${num}</b>`, tetra ? "正四面体は、床についた面を読みます" : "くわしい占いは右に出ます", 2000);
+      showFortune(num);
+    } else showStamp(`出た目は <b style="color:var(--accent)">${num}</b>`, tetra ? "正四面体は、床についた面の数を読みます" : "いちばん上の面の数を読みます", 2200);
     // ペンギンがよろこぶ（2回ジャンプ）
     D.heroIdle = false;
     const yy = P.group.rotation.y, yc = Math.atan2(D.cam.position.x - pos.x, D.cam.position.z - pos.z); // カメラのほうを向く
@@ -1214,7 +1455,7 @@ return { makeHero:makeHero, animWalk:animWalk, animIdle:animIdle };
     P.bob(0);
     D.heroIdle = true;
     D.busy = false;
-    ["bRoll", "bBlow", "bBack", "bNet", "bDice"].forEach((id) => { $(id).disabled = false; });
+    ["bRoll", "bBlow", "bBack", "bNet", "bDice", "bUranai", "bCut"].forEach((id) => { $(id).disabled = false; });
   }
 
   document.body.dataset.view = "count";
